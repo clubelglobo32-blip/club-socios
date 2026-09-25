@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nuevo Socio - Club Atlético El Globo</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        body { background-color: #f4f6f9; font-family: 'Segoe UI', sans-serif; } 
+        .card { border: none; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+        .logo-img { max-height: 38px; object-fit: contain; border-radius: 4px; }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-dark bg-dark px-4 shadow-sm">
+        <div class="d-flex align-items-center gap-2">
+            <img id="nav-logo" src="" alt="Logo" class="logo-img" style="display: none;">
+            <a class="navbar-brand fw-bold m-0" href="socios.html"><i class="bi bi-arrow-left me-2"></i> Volver a Socios</a>
+        </div>
+        <span class="text-light fw-semibold">Registrar Nuevo Socio - El Globo</span>
+    </nav>
+    <div class="container py-5">
+        <div class="row justify-content-center">
+            <div class="col-md-8">
+                <div class="card p-4 bg-white">
+                    <h4 class="fw-bold mb-4 text-primary"><i class="bi bi-person-plus me-2"></i>Formulario de Admisión y Legajo</h4>
+                    <form id="form-socio">
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label fw-semibold">Nº de Legajo</label>
+                                <input type="number" class="form-control bg-light fw-bold text-danger" id="nro_legajo" readonly required>
+                            </div>
+                            <div class="col-md-4 mb-3" id="contenedor-fecha">
+                                <label class="form-label fw-semibold">Fecha de Alta</label>
+                                <input type="date" class="form-control" id="fecha_alta" required>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label fw-semibold">Tipo de Socio</label>
+                                <select class="form-select" id="categoria" onchange="actualizarPrecioInscripcion()" required>
+                                    <option value="">-- Seleccionar --</option>
+                                    <option value="Socio Jugador">Socio Jugador</option>
+                                    <option value="Socio Pleno">Socio Pleno</option>
+                                    <option value="Socio Transitorio">Socio Transitorio</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-semibold">Nombre</label>
+                                <input type="text" class="form-control" id="nombre" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-semibold">Apellido</label>
+                                <input type="text" class="form-control" id="apellido" required>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label fw-semibold">DNI</label>
+                                <input type="text" class="form-control" id="dni" placeholder="Ej: 40.123.456" maxlength="12" oninput="formatearDNI(this)" required>
+                            </div>
+                            
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label fw-semibold">Fecha de Nacimiento</label>
+                                <input type="date" class="form-control" id="fecha_nacimiento" required>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label fw-semibold">Nacionalidad</label>
+                                <input type="text" class="form-control" id="nacionalidad" value="Argentina" required>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label fw-semibold">Estado Civil</label>
+                                <select class="form-select" id="estado_civil" required>
+                                    <option value="">-- Seleccionar --</option>
+                                    <option value="Soltero/a">Soltero/a</option>
+                                    <option value="Casado/a">Casado/a</option>
+                                    <option value="Divorciado/a">Divorciado/a</option>
+                                    <option value="Viudo/a">Viudo/a</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-semibold">Teléfono</label>
+                                <input type="text" class="form-control" id="telefono" placeholder="Solo números" oninput="this.value = this.value.replace(/[^0-9]/g, '')" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-semibold">Email</label>
+                                <input type="email" class="form-control" id="email" placeholder="correo@ejemplo.com">
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Dirección (Domicilio)</label>
+                            <input type="text" class="form-control" id="direccion" placeholder="Calle, Número, Barrio..." required>
+                        </div>
+
+                        <div class="row bg-light p-3 rounded border mb-4">
+                            <div class="col-md-6 mb-2">
+                                <label class="form-label fw-semibold text-primary">Monto Inscripción ($)</label>
+                                <input type="text" class="form-control bg-white fw-bold text-success" id="monto_inscripcion" readonly required>
+                            </div>
+                            <div class="col-md-6 mb-2">
+                                <label class="form-label fw-semibold text-dark">Primer Vencimiento de Cuota</label>
+                                <input type="text" class="form-control bg-white fw-bold text-danger" id="proximo_vencimiento" readonly required>
+                            </div>
+                        </div>
+
+                        <div class="mb-4 form-check bg-light p-3 rounded border">
+                            <input class="form-check-input ms-1" type="checkbox" id="imprimir_legajo_check" checked>
+                            <label class="form-check-label fw-semibold ms-2" for="imprimir_legajo_check">
+                                <i class="bi bi-file-earmark-pdf text-danger me-1"></i> Descargar Legajo en PDF al guardar
+                            </label>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary w-100 fw-semibold py-2">Guardar Socio en Base de Datos y Generar Legajo</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let ajustesGlobal = {};
+        let usuarioActual = {};
+
+        async function initForm() {
+            try {
+                const resSesion = await fetch('/api/session');
+                if (resSesion.ok) {
+                    usuarioActual = await resSesion.json();
+                    if (!usuarioActual.loggedIn) {
+                        window.location.href = 'index.html';
+                        return;
+                    }
+                    if (usuarioActual.rol === 'espectador') {
+                        alert('Tu usuario es Espectador (solo lectura) y no puede cargar socios.');
+                        window.location.href = 'socios.html';
+                        return;
+                    }
+                }
+
+                const resAjustes = await fetch('/api/ajustes');
+                if (resAjustes.ok) {
+                    ajustesGlobal = await resAjustes.json();
+                    if (ajustesGlobal.logo_url) {
+                        const el = document.getElementById('nav-logo');
+                        el.src = ajustesGlobal.logo_url;
+                        el.style.display = 'inline-block';
+                    }
+                    const nroLegajoActual = ajustesGlobal.proximo_legajo || 120;
+                    document.getElementById('nro_legajo').value = nroLegajoActual;
+                }
+
+                const inputFecha = document.getElementById('fecha_alta');
+                const hoy = new Date().toISOString().split('T')[0];
+                inputFecha.value = hoy;
+
+                if (usuarioActual.rol === 'operador' || usuarioActual.role === 'operador') {
+                    inputFecha.readOnly = true;
+                    inputFecha.classList.add('bg-light');
+                }
+
+                inputFecha.addEventListener('change', calcularPrimerVencimiento);
+                calcularPrimerVencimiento();
+
+            } catch (err) {
+                console.error("Error al inicializar formulario", err);
+            }
+        }
+
+        function formatearDNI(input) {
+            let valor = input.value.replace(/\D/g, '');
+            if (valor.length > 8) valor = valor.slice(0, 8);
+            if (valor.length > 5) {
+                valor = valor.slice(0, 2) + '.' + valor.slice(2, 5) + '.' + valor.slice(5);
+            } else if (valor.length > 2) {
+                valor = valor.slice(0, 2) + '.' + valor.slice(2);
+            }
+            input.value = valor;
+        }
+
+        function actualizarPrecioInscripcion() {
+            const categoria = document.getElementById('categoria').value;
+            let precio = 0;
+
+            if (categoria === 'Socio Jugador') {
+                precio = parseFloat(ajustesGlobal.inscripcion_socio || ajustesGlobal.cuota_jugador) || 6000;
+            } else if (categoria === 'Socio Pleno') {
+                precio = parseFloat(ajustesGlobal.cuota_pleno) || 8000;
+            } else if (categoria === 'Socio Transitorio') {
+                precio = parseFloat(ajustesGlobal.cuota_transitorio) || 5000;
+            }
+
+            document.getElementById('monto_inscripcion').value = `$ ${precio.toLocaleString('es-AR')}`;
+        }
+
+        function calcularPrimerVencimiento() {
+            const fechaAltaStr = document.getElementById('fecha_alta').value;
+            if (!fechaAltaStr) return;
+
+            const [anio, mes, dia] = fechaAltaStr.split('-').map(Number);
+            let mesCobro = mes;
+            let anioCobro = anio;
+
+            if (dia > 25) {
+                mesCobro += 2;
+            } else {
+                mesCobro += 1;
+            }
+
+            while (mesCobro > 12) {
+                mesCobro -= 12;
+                anioCobro += 1;
+            }
+
+            const mesesNombres = ["", "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
+            document.getElementById('proximo_vencimiento').value = `Del 1 al 10 de ${mesesNombres[mesCobro]} ${anioCobro}`;
+        }
+
+        document.getElementById('form-socio').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const data = {
+                legajo: document.getElementById('nro_legajo').value,
+                fecha_alta: document.getElementById('fecha_alta').value,
+                fecha_nacimiento: document.getElementById('fecha_nacimiento').value,
+                nombre: document.getElementById('nombre').value,
+                apellido: document.getElementById('apellido').value,
+                dni: document.getElementById('dni').value,
+                nacionalidad: document.getElementById('nacionalidad').value,
+                estado_civil: document.getElementById('estado_civil').value,
+                telefono: document.getElementById('telefono').value,
+                direccion: document.getElementById('direccion').value,
+                email: document.getElementById('email').value,
+                categoria: document.getElementById('categoria').value,
+                monto_inscripcion: document.getElementById('monto_inscripcion').value,
+                primer_vencimiento: document.getElementById('proximo_vencimiento').value
+            };
+
+            try {
+                const res = await fetch('/api/socios', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+
+                if (res.ok) {
+                    alert('¡Socio guardado con éxito en la Base de Datos!');
+
+                    if (document.getElementById('imprimir_legajo_check').checked) {
+                        try {
+                            const resDoc = await fetch('/api/socios/generar-pdf', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify(data)
+                            });
+
+                            if (resDoc.ok) {
+                                const blob = await resDoc.blob();
+                                const url = window.URL.createObjectURL(blob);
+                                const a = document.createElement('a');
+                                a.href = url;
+                                a.download = `Legajo_${data.legajo}_${data.apellido}.pdf`;
+                                document.body.appendChild(a);
+                                a.click();
+                                a.remove();
+                            } else {
+                                const errorText = await resDoc.text();
+                                console.error("Error del servidor al generar PDF:", errorText);
+                                alert('El socio se guardó, pero falló la generación del PDF. Revisa la consola (F12) del navegador.');
+                            }
+                        } catch (err) {
+                            console.error("Error de red al intentar descargar PDF:", err);
+                            alert('Error al intentar descargar el documento PDF.');
+                        }
+                    }
+
+                    window.location.href = 'socios_lista.html';
+                } else {
+                    const errRes = await res.text();
+                    console.error("Error al registrar socio:", errRes);
+                    alert('Error al registrar socio en la base de datos.');
+                }
+            } catch (err) {
+                console.error("Error en la petición de guardado:", err);
+                alert('Ocurrió un error de conexión con el servidor.');
+            }
+        });
+
+        document.addEventListener('DOMContentLoaded', initForm);
+    </script>
+</body>
+</html>

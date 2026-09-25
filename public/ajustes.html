@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ajustes del Club - Club Manager Pro</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        body { background-color: #f4f6f9; font-family: 'Segoe UI', sans-serif; } 
+        .card { border: none; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+        .logo-img { max-height: 38px; object-fit: contain; border-radius: 4px; }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-dark bg-dark px-4 shadow-sm">
+        <div class="d-flex align-items-center gap-2">
+            <img id="nav-logo" src="" alt="Logo" class="logo-img" style="display: none;">
+            <a class="navbar-brand fw-bold m-0" href="dashboard.html"><i class="bi bi-arrow-left me-2"></i> Volver al Menú</a>
+        </div>
+        <span class="text-light fw-semibold">Ajustes Generales y Legajos</span>
+    </nav>
+
+    <div class="container py-4">
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                <div class="card p-4 bg-white mb-4">
+                    <h4 class="fw-bold mb-4 text-secondary"><i class="bi bi-sliders me-2"></i>Configuración de Precios y Legajos</h4>
+                    <form id="form-ajustes">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-semibold small">Nombre del Club</label>
+                                <input type="text" class="form-control" id="nombre_club" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-semibold small">Correo Electrónico de Resguardo</label>
+                                <input type="email" class="form-control" id="email_contacto" required>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-semibold small">Logo / Imagen del Club (Archivo local)</label>
+                                <input type="file" class="form-control" id="logo_file" accept="image/*">
+                                <input type="hidden" id="logo_url_actual">
+                                <small class="text-muted" id="lbl-logo-actual">Sin logo cargado actualmente.</small>
+                                <div id="preview-logo-actual" class="mt-2"></div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-semibold small text-primary">Próximo Número de Legajo</label>
+                                <input type="number" class="form-control border-primary" id="proximo_legajo" required>
+                                <small class="text-muted">El sistema autoincrementará este número para los próximos socios.</small>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-semibold small"><i class="bi bi-whatsapp text-success me-1"></i>Celular de Contacto</label>
+                                <input type="text" class="form-control" id="telefono_contacto" placeholder="Ej. 291 456-7890">
+                                <small class="text-muted">Aparece en los tickets de pago impresos para que el socio pueda contactar al club.</small>
+                            </div>
+                        </div>
+
+                        <hr class="my-4">
+                        <h5 class="fw-bold text-dark mb-3">Tarifas y Cantidad de Canchas</h5>
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label fw-semibold small">Cancha Sintético F5 ($)</label>
+                                <input type="number" class="form-control" id="precio_sintetico_f5" required>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label fw-semibold small">Cancha Futsal ($)</label>
+                                <input type="number" class="form-control" id="precio_futsal" required>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label fw-semibold small">Cancha Pasto F11 ($)</label>
+                                <input type="number" class="form-control" id="precio_pasto_f11" required>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label fw-semibold small">Cant. Sintético F5</label>
+                                <input type="number" class="form-control" id="cant_sintetico_f5" required>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label fw-semibold small">Cant. Futsal</label>
+                                <input type="number" class="form-control" id="cant_futsal" required>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label fw-semibold small">Cant. Pasto F11</label>
+                                <input type="number" class="form-control" id="cant_pasto_f11" required>
+                            </div>
+                        </div>
+
+                        <hr class="my-4">
+                        <h5 class="fw-bold text-dark mb-3">Inscripciones y Cuotas Mensuales</h5>
+                        <div class="row">
+                            <div class="col-md-3 mb-3">
+                                <label class="form-label fw-semibold small">Inscripción ($)</label>
+                                <input type="number" class="form-control" id="inscripcion_socio" required>
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <label class="form-label fw-semibold small">Cuota Jugador ($)</label>
+                                <input type="number" class="form-control" id="cuota_jugador" required>
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <label class="form-label fw-semibold small">Cuota Transitorio ($)</label>
+                                <input type="number" class="form-control" id="cuota_transitorio" required>
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <label class="form-label fw-semibold small">Cuota Pleno ($)</label>
+                                <input type="number" class="form-control" id="cuota_pleno" required>
+                            </div>
+                        </div>
+
+                        <!-- Subir Plantilla Word Institucional -->
+                        <hr class="my-4">
+                        <h5 class="fw-bold text-dark mb-3"><i class="bi bi-file-earmark-word me-2"></i>Plantilla de Legajo Word</h5>
+                        <div class="row">
+                            <div class="col-md-12 mb-3">
+                                <label class="form-label fw-semibold small">Subir / Reemplazar Archivo .docx Institucional</label>
+                                <!-- Importante: Cambiado el id a plantilla_word_file para matchear con multer en el server -->
+                                <input type="file" class="form-control" id="plantilla_word_file" accept=".docx">
+                                <input type="hidden" id="plantilla_word_actual">
+                                <small class="text-muted d-block mt-1" id="lbl-plantilla-actual">Sube tu Word con etiquetas (ej: {{nombre}}, {{dni}}, {{legajo}}) para autocompletar.</small>
+                            </div>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary w-100 fw-semibold py-2 mt-3">Guardar Todos los Cambios</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        fetch('/api/session').then(res => res.json()).then(data => { 
+            if (!data.loggedIn || data.rol !== 'admin') window.location.href = 'dashboard.html'; 
+        });
+
+        async function cargarAjustes() {
+            try {
+                const res = await fetch('/api/ajustes');
+                if (res.ok) {
+                    const data = await res.json();
+                    document.getElementById('nombre_club').value = data.nombre_club || '';
+                    document.getElementById('email_contacto').value = data.email_contacto || '';
+                    document.getElementById('telefono_contacto').value = data.telefono_contacto || '';
+                    
+                    document.getElementById('logo_url_actual').value = data.logo_url || '';
+                    if(data.logo_url) {
+                        document.getElementById('lbl-logo-actual').textContent = `Logo actual cargado correctamente.`;
+                        document.getElementById('preview-logo-actual').innerHTML = `<img src="${data.logo_url}" alt="Logo actual" style="max-height:70px; border-radius:6px; border:1px solid #dee2e6; padding:4px;">`;
+                    }
+
+                    document.getElementById('plantilla_word_actual').value = data.plantilla_word || '';
+                    if(data.plantilla_word) {
+                        document.getElementById('lbl-plantilla-actual').innerHTML = `Plantilla Word institucional cargada: <a href="${data.plantilla_word}" target="_blank" class="text-decoration-underline">Ver archivo actual</a>`;
+                    }
+
+                    document.getElementById('proximo_legajo').value = data.proximo_legajo || 120;
+                    
+                    document.getElementById('precio_sintetico_f5').value = data.precio_sintetico_f5 || 12000;
+                    document.getElementById('precio_futsal').value = data.precio_futsal || 15000;
+                    document.getElementById('precio_pasto_f11').value = data.precio_pasto_f11 || 20000;
+                    
+                    document.getElementById('cant_sintetico_f5').value = data.cant_sintetico_f5 || 2;
+                    document.getElementById('cant_futsal').value = data.cant_futsal || 1;
+                    document.getElementById('cant_pasto_f11').value = data.cant_pasto_f11 || 1;
+
+                    document.getElementById('inscripcion_socio').value = data.inscripcion_socio || 10000;
+                    document.getElementById('cuota_jugador').value = data.cuota_jugador || 6000;
+                    document.getElementById('cuota_transitorio').value = data.cuota_transitorio || 5000;
+                    document.getElementById('cuota_pleno').value = data.cuota_pleno || 8000;
+
+                    if (data.logo_url) {
+                        const el = document.getElementById('nav-logo');
+                        el.src = data.logo_url;
+                        el.style.display = 'inline-block';
+                    }
+                }
+            } catch (e) {
+                console.error("Error al cargar ajustes:", e);
+            }
+        }
+
+        document.getElementById('form-ajustes').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const formData = new FormData();
+            formData.append('nombre_club', document.getElementById('nombre_club').value);
+            formData.append('email_contacto', document.getElementById('email_contacto').value);
+            formData.append('telefono_contacto', document.getElementById('telefono_contacto').value);
+            formData.append('logo_url', document.getElementById('logo_url_actual').value);
+            formData.append('plantilla_word', document.getElementById('plantilla_word_actual').value);
+            
+            const logoFileInput = document.getElementById('logo_file');
+            if (logoFileInput.files[0]) {
+                formData.append('logo_file', logoFileInput.files[0]);
+            }
+
+            const plantillaInput = document.getElementById('plantilla_word_file');
+            if (plantillaInput.files[0]) {
+                formData.append('plantilla_word_file', plantillaInput.files[0]);
+            }
+
+            formData.append('proximo_legajo', document.getElementById('proximo_legajo').value);
+            formData.append('precio_sintetico_f5', document.getElementById('precio_sintetico_f5').value);
+            formData.append('precio_futsal', document.getElementById('precio_futsal').value);
+            formData.append('precio_pasto_f11', document.getElementById('precio_pasto_f11').value);
+            formData.append('cant_sintetico_f5', document.getElementById('cant_sintetico_f5').value);
+            formData.append('cant_futsal', document.getElementById('cant_futsal').value);
+            formData.append('cant_pasto_f11', document.getElementById('cant_pasto_f11').value);
+            formData.append('inscripcion_socio', document.getElementById('inscripcion_socio').value);
+            formData.append('cuota_jugador', document.getElementById('cuota_jugador').value);
+            formData.append('cuota_transitorio', document.getElementById('cuota_transitorio').value);
+            formData.append('cuota_pleno', document.getElementById('cuota_pleno').value);
+
+            try {
+                const res = await fetch('/api/ajustes', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (res.ok) {
+                    alert('¡Ajustes y plantilla guardados con éxito!');
+                    cargarAjustes();
+                } else {
+                    alert('Error al guardar los ajustes.');
+                }
+            } catch (err) {
+                console.error("Error de red:", err);
+                alert('Error de conexión al guardar.');
+            }
+        });
+
+        cargarAjustes();
+    </script>
+</body>
+</html>

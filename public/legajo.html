@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Legajo Institucional - Club Manager Pro</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        body { background-color: #f4f6f9; font-family: 'Segoe UI', sans-serif; } 
+        .card { border: none; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+        @media print {
+            body { background-color: #fff; }
+            .no-print { display: none !important; }
+            .card { box-shadow: none; border: none; }
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-dark bg-dark px-4 shadow-sm no-print">
+        <a class="navbar-brand fw-bold m-0" href="socios.html"><i class="bi bi-arrow-left me-2"></i> Volver al Padrón</a>
+        <span class="text-light fw-semibold">Legajo Institucional</span>
+    </nav>
+
+    <div class="container py-4">
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                <!-- Visualización del Legajo en blanco para imprimir -->
+                <div class="card p-5 bg-white mb-4">
+                    <div class="text-center mb-4">
+                        <img id="legajo-logo" src="" alt="Logo" style="max-height:70px; object-fit:contain; display:none; margin-bottom:8px;">
+                        <h3 id="lbl-nombre-club" class="fw-bold text-uppercase">CLUB MANAGER PRO</h3>
+                        <h5 class="text-muted">LEGAJO INSTITUCIONAL DE SOCIO</h5>
+                        <hr>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <p><strong>Nº de Legajo:</strong> <span id="lbl-legajo" class="text-primary fw-bold">--</span></p>
+                            <p><strong>Apellido y Nombre:</strong> <span id="lbl-apynom">--</span></p>
+                            <p><strong>DNI:</strong> <span id="lbl-dni">--</span></p>
+                            <p><strong>Fecha de Nacimiento:</strong> <span id="lbl-nacimiento">--</span></p>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>Categoría:</strong> <span id="lbl-categoria" class="badge bg-secondary">--</span></p>
+                            <p><strong>Teléfono:</strong> <span id="lbl-telefono">--</span></p>
+                            <p><strong>Correo Electrónico:</strong> <span id="lbl-email">--</span></p>
+                            <p><strong>Dirección:</strong> <span id="lbl-direccion">--</span></p>
+                        </div>
+                    </div>
+
+                    <div class="p-3 bg-light rounded mb-4">
+                        <p class="small text-muted m-0">Declaro conocer y aceptar los estatutos y reglamentos vigentes de la institución, comprometiéndome al cumplimiento de las normativas del establecimiento.</p>
+                    </div>
+
+                    <div class="row mt-5 pt-4">
+                        <div class="col-6 text-center">
+                            <div style="border-top: 1px solid #333; width: 80%; margin: 0 auto; padding-top: 5px;">Firma del Socio</div>
+                        </div>
+                        <div class="col-6 text-center">
+                            <div style="border-top: 1px solid #333; width: 80%; margin: 0 auto; padding-top: 5px;">Firma Autorizada / Club</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sección para cargar archivo firmado -->
+                <div class="card p-4 bg-white mb-4 no-print">
+                    <h5 class="fw-bold text-secondary mb-3"><i class="bi bi-cloud-arrow-up-fill me-2"></i>Archivo de Legajo Firmado</h5>
+                    <div id="contenedor-estado-archivo" class="mb-3"></div>
+                    <form id="form-subir-archivo" onsubmit="subirArchivoLegajo(event)">
+                        <div class="input-group">
+                            <input type="file" class="form-control" id="archivo_firmado" accept=".pdf,image/*" required>
+                            <button class="btn btn-outline-success" type="submit"><i class="bi bi-upload me-1"></i> Subir Archivo</button>
+                        </div>
+                        <div class="form-text">Adjunta el documento escaneado o foto con la firma del socio.</div>
+                    </form>
+                </div>
+
+                <!-- Botones de Acción / Impresión Inteligente -->
+                <div class="text-center no-print">
+                    <button class="btn btn-primary px-4 fw-semibold me-2" onclick="gestionarImpresion()"><i class="bi bi-printer me-2"></i> Imprimir / Re-imprimir</button>
+                    <a href="socios.html" class="btn btn-secondary px-4 fw-semibold">Volver al Padrón</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let socioGlobal = {};
+
+        async function cargarLegajo() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const idSocio = urlParams.get('id');
+
+            if (!idSocio) {
+                alert('No se especificó un socio.');
+                window.location.href = 'socios.html';
+                return;
+            }
+
+            try {
+                const [resSocio, resAjustes] = await Promise.all([
+                    fetch(`/api/socios/${idSocio}`),
+                    fetch('/api/ajustes')
+                ]);
+
+                if (resSocio.ok) {
+                    socioGlobal = await resSocio.json();
+                    document.getElementById('lbl-legajo').textContent = `#${socioGlobal.legajo}`;
+                    document.getElementById('lbl-apynom').textContent = `${socioGlobal.apellido}, ${socioGlobal.nombre}`;
+                    document.getElementById('lbl-dni').textContent = socioGlobal.dni || '-';
+                    document.getElementById('lbl-nacimiento').textContent = socioGlobal.fecha_nacimiento || '-';
+                    document.getElementById('lbl-categoria').textContent = socioGlobal.categoria || '-';
+                    document.getElementById('lbl-telefono').textContent = socioGlobal.telefono || '-';
+                    document.getElementById('lbl-email').textContent = socioGlobal.email || '-';
+                    document.getElementById('lbl-direccion').textContent = socioGlobal.direccion || '-';
+
+                    verificarArchivoSubido(socioGlobal);
+                }
+
+                if (resAjustes.ok) {
+                    const ajustes = await resAjustes.json();
+                    if (ajustes.nombre_club) document.getElementById('lbl-nombre-club').textContent = ajustes.nombre_club;
+                    if (ajustes.logo_url) {
+                        const el = document.getElementById('legajo-logo');
+                        el.src = ajustes.logo_url;
+                        el.style.display = 'inline-block';
+                    }
+                }
+            } catch (err) {
+                console.error("Error al cargar legajo", err);
+            }
+        }
+
+        function verificarArchivoSubido(socio) {
+            const contenedor = document.getElementById('contenedor-estado-archivo');
+            if (socio.archivo_legajo) {
+                contenedor.innerHTML = `
+                    <div class="alert alert-success d-flex justify-content-between align-items-center m-0">
+                        <span><i class="bi bi-check-circle-fill me-2"></i>El socio ya cuenta con un archivo firmado subido.</span>
+                        <a href="${socio.archivo_legajo}" target="_blank" class="btn btn-sm btn-success fw-semibold"><i class="bi bi-eye me-1"></i> Ver Archivo Actual</a>
+                    </div>
+                `;
+            } else {
+                contenedor.innerHTML = `<div class="alert alert-warning m-0"><i class="bi bi-exclamation-triangle me-2"></i>Este socio todavía no tiene ningún archivo firmado cargado.</div>`;
+            }
+        }
+
+        async function subirArchivoLegajo(e) {
+            e.preventDefault();
+            const inputFiles = document.getElementById('archivo_firmado');
+            if (inputFiles.files.length === 0) return;
+
+            const formData = new FormData();
+            formData.append('archivo', inputFiles.files[0]);
+
+            try {
+                const res = await fetch(`/api/socios/${socioGlobal.id}/archivo`, {
+                    method: 'POST',
+                    body: formData
+                });
+                if (res.ok) {
+                    alert('¡Archivo subido correctamente!');
+                    location.reload();
+                } else {
+                    alert('Error al subir el archivo al servidor.');
+                }
+            } catch (err) {
+                alert('No se pudo conectar con el servidor.');
+            }
+        }
+
+        function gestionarImpresion() {
+            if (socioGlobal.archivo_legajo) {
+                const opcion = prompt("Este socio tiene un archivo subido:\n1 - Imprimir/Ver el archivo digitalizado cargado\n2 - Imprimir el formato en blanco del sistema\n\nIngrese '1' o '2':", "1");
+                if (opcion === "1") {
+                    window.open(socioGlobal.archivo_legajo, '_blank');
+                    return;
+                } else if (opcion !== "2") {
+                    return;
+                }
+            }
+            window.print();
+        }
+
+        cargarLegajo();
+    </script>
+</body>
+</html>

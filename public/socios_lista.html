@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Padrón, Legajos y Deudas - Club Atlético El Globo</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        body { background-color: #f4f6f9; font-family: 'Segoe UI', sans-serif; }
+        .card { border: none; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+        .table th, .table td { vertical-align: middle; }
+        .logo-img { max-height: 38px; object-fit: contain; border-radius: 4px; }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-dark bg-dark px-4 shadow-sm">
+        <div class="d-flex align-items-center gap-2">
+            <img id="nav-logo" src="" alt="Logo" class="logo-img" style="display: none;">
+            <a class="navbar-brand fw-bold m-0" href="socios.html"><i class="bi bi-arrow-left me-2"></i> Menú Principal</a>
+        </div>
+        <span class="text-light fw-semibold">Padrón, Legajos y Control de Deudas - El Globo</span>
+    </nav>
+
+    <div class="container py-4">
+        <!-- BUSCADOR GENERAL DE SOCIOS -->
+        <div class="card p-4 bg-white mb-4">
+            <div class="row align-items-center">
+                <div class="col-md-4">
+                    <h4 class="fw-bold text-primary m-0"><i class="bi bi-people-fill me-2"></i>Padrón de Socios</h4>
+                </div>
+                <div class="col-md-8">
+                    <div class="input-group">
+                        <span class="input-group-text bg-light"><i class="bi bi-search"></i></span>
+                        <input type="text" id="buscador" class="form-control form-control-lg" placeholder="Buscar por apellido, nombre, DNI o legajo..." onkeyup="filtrarSocios()">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TABLA DE SOCIOS -->
+        <div class="card p-4 bg-white mb-4">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead class="table-dark">
+                        <tr>
+                            <th style="width: 90px;">Legajo</th>
+                            <th>Apellido y Nombre</th>
+                            <th style="width: 120px;">DNI</th>
+                            <th style="width: 150px;">Categoría</th>
+                            <th style="width: 120px;">Inscripción</th>
+                            <th style="width: 150px;">Cargado por</th>
+                            <th class="text-center" style="width: 110px;">PDF</th>
+                            <th class="text-center" style="width: 160px;">Legajo Firmado</th>
+                            <th class="text-center" style="width: 180px;">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tabla-socios">
+                        <!-- Carga dinámica -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- PANEL DE DETALLE, DEUDAS Y COMPROBANTES DEL SOCIO SELECCIONADO -->
+        <div id="panel-detalle-socio" style="display: none;" class="card p-4 bg-white border-start border-primary border-4 mb-5">
+            <div class="d-flex justify-content-between align-items-center mb-4 border-bottom pb-3">
+                <div>
+                    <h3 class="fw-bold text-dark m-0" id="det-nombre-completo">-</h3>
+                    <p class="text-muted m-0">Legajo N°: <strong id="det-legajo" class="text-danger">-</strong> | DNI: <strong id="det-dni">-</strong> | Categoría: <span class="badge bg-secondary" id="det-categoria">-</span> | Fecha de Alta / Inscripción: <strong id="det-fecha-alta">-</strong></p>
+                </div>
+                <div>
+                    <button class="btn btn-outline-secondary btn-sm" onclick="cerrarDetalleSocio()"><i class="bi bi-x-lg me-1"></i> Cerrar Panel</button>
+                </div>
+            </div>
+
+            <div class="row">
+                <!-- COLUMNA IZQUIERDA: ESTADO DE DEUDAS (Desde inscripción hasta hoy) -->
+                <div class="col-lg-7">
+                    <h5 class="fw-bold text-dark mb-3"><i class="bi bi-calendar-check me-2"></i>Control de Deudas (Desde Inscripción a la Fecha)</h5>
+                    <div id="det-historial-deudas" style="max-height: 450px; overflow-y: auto;" class="pe-2">
+                        <!-- Se llena dinámicamente -->
+                    </div>
+                </div>
+
+                <!-- COLUMNA DERECHA: COMPROBANTES Y PAPELES CARGADOS -->
+                <div class="col-lg-5 mt-4 mt-lg-0 border-start-lg">
+                    <h5 class="fw-bold text-dark mb-3"><i class="bi bi-folder2-open me-2"></i>Comprobantes y Documentos</h5>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold text-muted small">Contrato / Legajo Firmado:</label>
+                        <div id="det-contenedor-firmado">
+                            <!-- Se llena dinámicamente -->
+                        </div>
+                    </div>
+                    <hr>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold text-muted small">Comprobantes de Pago Subidos:</label>
+                        <div id="det-lista-comprobantes" style="max-height: 300px; overflow-y: auto;">
+                            <!-- Se llena dinámicamente -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para Subir Archivo Firmado -->
+    <div class="modal fade" id="modalSubirFirmado" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-dark text-white">
+                    <h5 class="modal-title"><i class="bi bi-upload me-2"></i>Subir Legajo Firmado</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <form id="form-subir-firmado">
+                    <div class="modal-body">
+                        <input type="hidden" id="socio_id_firmado">
+                        <p class="text-muted small">Selecciona el documento escaneado o foto del contrato firmado por el socio.</p>
+                        <div class="mb-3">
+                            <input class="form-control" type="file" id="archivo_firmado" accept=".pdf,image/*" required>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-primary btn-sm">Subir Archivo</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        let listaSociosGlobal = [];
+        let rolActual = 'operador';
+
+        async function verificarSesion() {
+            try {
+                const res = await fetch('/api/session');
+                const data = await res.json();
+                if (!data.loggedIn) {
+                    window.location.href = 'index.html';
+                    return;
+                }
+                rolActual = data.rol;
+            } catch (err) {
+                console.error('Error al verificar la sesión:', err);
+            }
+        }
+
+        async function cargarSocios() {
+            try {
+                const res = await fetch('/api/socios');
+                if (res.ok) {
+                    listaSociosGlobal = await res.json();
+                    listaSociosGlobal.sort((a, b) => (Number(a.legajo) || 0) - (Number(b.legajo) || 0));
+                    mostrarSocios(listaSociosGlobal);
+                }
+            } catch (err) {
+                console.error("Error al cargar socios:", err);
+            }
+        }
+
+        function mostrarSocios(socios) {
+            const tbody = document.getElementById('tabla-socios');
+            tbody.innerHTML = '';
+
+            if (socios.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="9" class="text-center text-muted py-4">No se encontraron registros.</td></tr>`;
+                return;
+            }
+
+            const puedeEscribir = rolActual === 'admin' || rolActual === 'operador';
+
+            socios.forEach(s => {
+                let estadoFirmado;
+                if (s.archivo_firma) {
+                    estadoFirmado = `<a href="${s.archivo_firma}" target="_blank" class="btn btn-sm btn-success text-nowrap w-100"><i class="bi bi-check-circle-fill me-1"></i> Firmado</a>`;
+                } else if (puedeEscribir) {
+                    estadoFirmado = `<button class="btn btn-sm btn-danger text-nowrap w-100 fw-semibold" onclick="abrirModalFirmado(${s.id})"><i class="bi bi-exclamation-triangle-fill me-1"></i> Falta Subir</button>`;
+                } else {
+                    estadoFirmado = `<span class="badge bg-secondary w-100 py-2"><i class="bi bi-exclamation-triangle-fill me-1"></i> Falta Subir</span>`;
+                }
+
+                let fechaAltaStr = s.fecha_alta || s.creado_en || s.created_at || '2025-01-01';
+
+                tbody.innerHTML += `
+                    <tr>
+                        <td class="fw-bold text-danger">#${s.legajo || '-'}</td>
+                        <td class="text-dark fw-semibold">${s.apellido}, ${s.nombre}</td>
+                        <td>${s.dni}</td>
+                        <td><span class="badge bg-secondary">${s.categoria || 'General'}</span></td>
+                        <td><small class="text-muted">${fechaAltaStr.split('T')[0]}</small></td>
+                        <td><small class="text-muted">${s.creado_por || '-'}</small></td>
+                        <td class="text-center">
+                            <button class="btn btn-sm btn-outline-danger text-nowrap" onclick="descargarPDF('${s.legajo}')">
+                                <i class="bi bi-file-earmark-pdf-fill"></i> PDF
+                            </button>
+                        </td>
+                        <td class="text-center">${estadoFirmado}</td>
+                        <td class="text-center">
+                            <button class="btn btn-sm btn-dark text-nowrap mb-1" onclick="verLegajoYDeudas(${s.id})">
+                                <i class="bi bi-eye-fill me-1"></i> Ver Detalle
+                            </button>
+                            ${rolActual === 'admin' ? `
+                            <button class="btn btn-sm btn-outline-danger text-nowrap" onclick="eliminarSocio(${s.id}, '${(s.apellido || '').replace(/'/g, "\\'")}', '${(s.nombre || '').replace(/'/g, "\\'")}')">
+                                <i class="bi bi-trash-fill me-1"></i> Eliminar
+                            </button>` : ''}
+                        </td>
+                    </tr>
+                `;
+            });
+        }
+
+        function filtrarSocios() {
+            const texto = document.getElementById('buscador').value.toLowerCase();
+            const filtrados = listaSociosGlobal.filter(s => 
+                (s.nombre && s.nombre.toLowerCase().includes(texto)) ||
+                (s.apellido && s.apellido.toLowerCase().includes(texto)) ||
+                (s.dni && s.dni.toLowerCase().includes(texto)) ||
+                (s.legajo && String(s.legajo).toLowerCase().includes(texto))
+            );
+            mostrarSocios(filtrados);
+        }
+
+        async function verLegajoYDeudas(socioId) {
+            const socio = listaSociosGlobal.find(s => s.id === socioId);
+            if (!socio) return;
+
+            document.getElementById('det-nombre-completo').innerText = `${socio.apellido}, ${socio.nombre}`;
+            document.getElementById('det-legajo').innerText = socio.legajo || '-';
+            document.getElementById('det-dni').innerText = socio.dni || '-';
+            document.getElementById('det-categoria').innerText = socio.categoria || 'General';
+            
+            const fechaAltaStr = socio.fecha_alta || socio.creado_en || socio.created_at || '2025-01-01';
+            document.getElementById('det-fecha-alta').innerText = fechaAltaStr.split('T')[0];
+
+            const contenedorFirmado = document.getElementById('det-contenedor-firmado');
+            if (socio.archivo_firma) {
+                contenedorFirmado.innerHTML = `
+                    <div class="alert alert-success py-2 mb-0 d-flex justify-content-between align-items-center">
+                        <span><i class="bi bi-check-circle-fill me-2"></i>Contrato Firmado OK</span>
+                        <a href="${socio.archivo_firma}" target="_blank" class="btn btn-sm btn-success">Ver Documento</a>
+                    </div>`;
+            } else {
+                const puedeEscribir = rolActual === 'admin' || rolActual === 'operador';
+                contenedorFirmado.innerHTML = `
+                    <div class="alert alert-danger py-2 mb-0 d-flex justify-content-between align-items-center">
+                        <span><i class="bi bi-exclamation-triangle-fill me-2"></i>Falta subir contrato</span>
+                        ${puedeEscribir ? `<button class="btn btn-sm btn-danger" onclick="abrirModalFirmado(${socio.id})">Subir Ahora</button>` : ''}
+                    </div>`;
+            }
+
+            try {
+                const res = await fetch(`/api/socios/${socioId}/pagos`);
+                if (res.ok) {
+                    const pagos = await res.json();
+                    generarHistorialDeudasDesdeInscripcion(fechaAltaStr, pagos);
+                    generarListaComprobantes(pagos);
+                }
+            } catch (err) {
+                console.error("Error al obtener pagos para detalle", err);
+            }
+
+            document.getElementById('panel-detalle-socio').style.display = 'block';
+            window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+        }
+
+        function cerrarDetalleSocio() {
+            document.getElementById('panel-detalle-socio').style.display = 'none';
+        }
+
+        function generarHistorialDeudasDesdeInscripcion(fechaAlta, pagos) {
+            let mesesPagadosSet = new Set();
+
+            if (Array.isArray(pagos)) {
+                pagos.forEach(p => {
+                    if (p.detalle) {
+                        p.detalle.split(',').forEach(m => mesesPagadosSet.add(m.trim().toLowerCase()));
+                    }
+                });
+            }
+
+            const fechaInicio = new Date(fechaAlta);
+            const fechaActual = new Date();
+
+            let anioInicio = isNaN(fechaInicio.getFullYear()) ? 2025 : fechaInicio.getFullYear();
+            let mesInicio = isNaN(fechaInicio.getMonth()) ? 0 : fechaInicio.getMonth();
+
+            let anioActual = fechaActual.getFullYear();
+            let mesActual = fechaActual.getMonth();
+
+            const mesesNombres = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
+            const contenedorDeudas = document.getElementById('det-historial-deudas');
+            contenedorDeudas.innerHTML = '';
+
+            let htmlAcumulado = '';
+
+            for (let anio = anioInicio; anio <= anioActual; anio++) {
+                let mStart = (anio === anioInicio) ? mesInicio : 0;
+                let mEnd = (anio === anioActual) ? mesActual : 11;
+
+                htmlAcumulado += `<h6 class="fw-bold text-secondary mt-3 mb-2"><i class="bi bi-calendar-event me-1"></i> Año ${anio}</h6><div class="row g-2">`;
+
+                for (let m = mStart; m <= mEnd; m++) {
+                    const nombreMes = mesesNombres[m];
+                    const claveBusqueda = `${nombreMes.toLowerCase()} ${anio}`;
+                    const estaPagado = mesesPagadosSet.has(claveBusqueda);
+
+                    if (estaPagado) {
+                        htmlAcumulado += `
+                            <div class="col-6 col-md-4">
+                                <div class="p-2 border rounded bg-light text-success fw-semibold small text-center">
+                                    <i class="bi bi-check-circle-fill me-1"></i> ${nombreMes}
+                                    <div class="text-muted" style="font-size: 0.7rem;">Pagado</div>
+                                </div>
+                            </div>`;
+                    } else {
+                        htmlAcumulado += `
+                            <div class="col-6 col-md-4">
+                                <div class="p-2 border rounded bg-white text-danger fw-semibold small text-center border-danger shadow-sm">
+                                    <i class="bi bi-exclamation-circle-fill me-1"></i> ${nombreMes}
+                                    <div class="text-dark fw-bold" style="font-size: 0.7rem;">Debe / Pendiente</div>
+                                </div>
+                            </div>`;
+                    }
+                }
+                htmlAcumulado += `</div>`;
+            }
+
+            contenedorDeudas.innerHTML = htmlAcumulado;
+        }
+
+        function generarListaComprobantes(pagos) {
+            const contenedorComprobantes = document.getElementById('det-lista-comprobantes');
+            contenedorComprobantes.innerHTML = '';
+
+            const pagosConComprobante = Array.isArray(pagos) ? pagos.filter(p => p.comprobante && p.comprobante.trim() !== '') : [];
+
+            if (pagosConComprobante.length === 0) {
+                contenedorComprobantes.innerHTML = `<p class="text-muted small fst-italic">No hay comprobantes de pago digitalizados adjuntos.</p>`;
+                return;
+            }
+
+            pagosConComprobante.forEach(p => {
+                contenedorComprobantes.innerHTML += `
+                    <div class="d-flex justify-content-between align-items-center p-2 mb-2 border rounded bg-light">
+                        <div>
+                            <small class="fw-bold d-block text-dark">${p.concepto || 'Cuota Social'} ($${p.monto})</small>
+                            <small class="text-muted" style="font-size: 0.75rem;">Fecha: ${p.fecha} | Detalle: ${p.detalle}</small>
+                        </div>
+                        <a href="${p.comprobante}" target="_blank" class="btn btn-sm btn-outline-primary"><i class="bi bi-file-earmark-text"></i> Ver</a>
+                    </div>`;
+            });
+        }
+
+        async function descargarPDF(legajo) {
+            const socio = listaSociosGlobal.find(s => String(s.legajo) === String(legajo));
+            if (!socio) return;
+
+            try {
+                const resDoc = await fetch('/api/socios/generar-pdf', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(socio)
+                });
+
+                if (resDoc.ok) {
+                    const blob = await resDoc.blob();
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `Legajo_${socio.legajo}_${socio.apellido}.pdf`;
+                    document.body.appendChild(a);
+                    a.click();
+                    a.remove();
+                } else {
+                    alert('Error al generar el documento PDF.');
+                }
+            } catch (err) {
+                console.error("Error al descargar PDF:", err);
+                alert('Error de conexión al generar el documento.');
+            }
+        }
+
+        async function eliminarSocio(id, apellido, nombre) {
+            if (rolActual !== 'admin') return;
+            const confirmar = confirm(`¿Seguro que querés eliminar al socio ${apellido}, ${nombre}? Esta acción no se puede deshacer.`);
+            if (!confirmar) return;
+
+            try {
+                const res = await fetch(`/api/socios/${id}`, { method: 'DELETE' });
+                const data = await res.json();
+                if (res.ok && data.success) {
+                    cargarSocios();
+                    cerrarDetalleSocio();
+                } else {
+                    alert(data.error || 'Error al eliminar el socio.');
+                }
+            } catch (err) {
+                console.error('Error al eliminar socio:', err);
+                alert('Error de conexión al eliminar el socio.');
+            }
+        }
+
+        function abrirModalFirmado(id) {
+            document.getElementById('socio_id_firmado').value = id;
+            document.getElementById('archivo_firmado').value = '';
+            new bootstrap.Modal(document.getElementById('modalSubirFirmado')).show();
+        }
+
+        document.getElementById('form-subir-firmado').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const socioId = document.getElementById('socio_id_firmado').value;
+            const archivoInput = document.getElementById('archivo_firmado').files[0];
+
+            const formData = new FormData();
+            formData.append('firma', archivoInput);
+
+            try {
+                const res = await fetch(`/api/socios/${socioId}/firma`, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (res.ok) {
+                    alert('¡Legajo firmado subido correctamente!');
+                    bootstrap.Modal.getInstance(document.getElementById('modalSubirFirmado')).hide();
+                    cargarSocios();
+                    cerrarDetalleSocio();
+                } else {
+                    alert('Error en el servidor al subir el archivo.');
+                }
+            } catch (err) {
+                console.error(err);
+                alert('Error de conexión.');
+            }
+        });
+
+        fetch('/api/ajustes').then(res => res.json()).then(data => {
+            if (data.logo_url) {
+                const el = document.getElementById('nav-logo');
+                el.src = data.logo_url;
+                el.style.display = 'inline-block';
+            }
+        }).catch(() => {});
+
+        (async () => {
+            await verificarSesion();
+            cargarSocios();
+        })();
+    </script>
+</body>
+</html>

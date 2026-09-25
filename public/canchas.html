@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Módulo de Canchas - Club Manager Pro</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        body { background-color: #f4f6f9; font-family: 'Segoe UI', sans-serif; } 
+        .card { border: none; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+        .logo-img { max-height: 40px; object-fit: contain; }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-dark bg-dark px-4 shadow-sm justify-content-between">
+        <div class="d-flex align-items-center">
+            <img id="nav-logo" src="" alt="Logo" class="logo-img me-2" style="display: none;">
+            <a class="navbar-brand fw-bold m-0" href="dashboard.html"><i class="bi bi-arrow-left me-2"></i> Menú Principal</a>
+        </div>
+        <span class="text-light fw-semibold">Gestión de Canchas y Reservas</span>
+    </nav>
+
+    <div class="container py-4">
+        <div class="row">
+            <!-- Izquierda: Formulario de Carga -->
+            <div class="col-lg-5 mb-4" id="col-form-reserva">
+                <div class="card p-4 bg-white">
+                    <h4 class="fw-bold mb-3 text-success"><i class="bi bi-calendar-plus me-2"></i>Reservar Turno</h4>
+                    <form id="form-reserva">
+                        <div class="mb-2">
+                            <label class="form-label fw-semibold small">Nombre y Apellido</label>
+                            <input type="text" class="form-control form-control-sm" id="nombre" required>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-2">
+                                <label class="form-label fw-semibold small">DNI</label>
+                                <input type="text" class="form-control form-control-sm" id="dni" required>
+                            </div>
+                            <div class="col-md-6 mb-2">
+                                <label class="form-label fw-semibold small">Teléfono</label>
+                                <input type="text" class="form-control form-control-sm" id="telefono" required>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-2">
+                                <label class="form-label fw-semibold small">Fecha</label>
+                                <input type="date" class="form-control form-control-sm" id="fecha" required onchange="actualizarHorariosOcupados()">
+                            </div>
+                            <div class="col-md-6 mb-2">
+                                <label class="form-label fw-semibold small">Horario de Inicio</label>
+                                <input type="time" class="form-control form-control-sm" id="horario" required>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-2">
+                                <label class="form-label fw-semibold small">¿Cuántas horas?</label>
+                                <input type="number" class="form-control form-control-sm" id="horas" value="1" min="1" max="4" required onchange="calcularMontoTurno()">
+                            </div>
+                            <div class="col-md-6 mb-2">
+                                <label class="form-label fw-semibold small">Tipo de Cancha</label>
+                                <select class="form-select form-select-sm" id="tipo" required onchange="actualizarSelectCanchas(); calcularMontoTurno(); actualizarHorariosOcupados();">
+                                    <option value="Sintético F5">Sintético Fútbol 5</option>
+                                    <option value="Futsal">Futsal</option>
+                                    <option value="Pasto F11">Pasto Fútbol 11</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold small">Número de Cancha</label>
+                            <select class="form-select form-select-sm" id="cancha" required onchange="actualizarHorariosOcupados()"></select>
+                        </div>
+
+                        <div class="mb-3" id="contenedor-ocupados" style="display:none;">
+                            <label class="form-label fw-semibold small text-danger mb-1"><i class="bi bi-exclamation-triangle-fill me-1"></i>Horarios ya ocupados en esta cancha para ese día:</label>
+                            <div id="lista-ocupados" class="d-flex flex-wrap gap-1"></div>
+                        </div>
+
+                        <div class="p-3 bg-light rounded mb-3 d-flex justify-content-between align-items-center">
+                            <span class="fw-semibold small">Monto Total:</span>
+                            <span class="fs-5 fw-bold text-success" id="lbl-monto-reserva">$0</span>
+                        </div>
+
+                        <button type="submit" class="btn btn-success w-100 fw-semibold py-2">Confirmar Turno</button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Derecha: Grilla de Turnos y Búsqueda -->
+            <div class="col-lg-7" id="col-lista-turnos">
+                <div class="card p-4 bg-white">
+                    <h4 class="fw-bold mb-3 text-secondary"><i class="bi bi-clock-history me-2"></i>Turnos y Reservas</h4>
+                    <input type="text" class="form-control mb-3" id="buscador-turnos" placeholder="Buscar por cliente o teléfono..." oninput="filtrarTurnos()">
+                    
+                    <div class="table-responsive" style="max-height: 500px; overflow-y: auto;">
+                        <table class="table table-sm table-hover align-middle">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Fecha / Hora</th>
+                                    <th>Cliente</th>
+                                    <th>Cancha</th>
+                                    <th>Monto</th>
+                                    <th>Estado</th>
+                                    <th class="text-end">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tabla-reservas-body"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        let ajustesGlobal = {};
+        let reservasGlobal = [];
+        let rolUsuario = 'operador';
+
+        fetch('/api/session').then(res => res.json()).then(data => { 
+            if (!data.loggedIn) window.location.href = 'index.html';
+            rolUsuario = data.rol;
+            if (rolUsuario === 'espectador') {
+                // Modo solo lectura: sin formulario de carga, solo ver los turnos
+                document.getElementById('col-form-reserva').style.display = 'none';
+                document.getElementById('col-lista-turnos').className = 'col-lg-12';
+            }
+        });
+
+        // Cargar ajustes generales, logo institucional y tarifas actualizadas
+        fetch('/api/ajustes').then(res => res.json()).then(ajustes => {
+            ajustesGlobal = ajustes || {};
+            if (ajustes && ajustes.logo_url) {
+                const logoNav = document.getElementById('nav-logo');
+                logoNav.src = ajustes.logo_url;
+                logoNav.style.display = 'block';
+            }
+            actualizarSelectCanchas();
+            calcularMontoTurno();
+            actualizarHorariosOcupados();
+        }).catch(err => console.log('Error al cargar ajustes', err));
+
+        async function init() {
+            document.getElementById('fecha').value = new Date().toISOString().split('T')[0];
+            cargarReservas();
+        }
+
+        function actualizarSelectCanchas() {
+            const tipo = document.getElementById('tipo').value;
+            const selectCancha = document.getElementById('cancha');
+            selectCancha.innerHTML = '';
+
+            let cantidad = 1;
+            let prefijo = '';
+
+            if (tipo === 'Sintético F5') {
+                cantidad = parseInt(ajustesGlobal.cant_sintetico_f5) || 2;
+                prefijo = 'Sintético F5 - Cancha';
+            } else if (tipo === 'Futsal') {
+                cantidad = parseInt(ajustesGlobal.cant_futsal) || 1;
+                prefijo = 'Futsal - Cancha';
+            } else if (tipo === 'Pasto F11') {
+                cantidad = parseInt(ajustesGlobal.cant_pasto_f11) || 1;
+                prefijo = 'Pasto F11 - Cancha';
+            }
+
+            for (let i = 1; i <= cantidad; i++) {
+                const option = document.createElement('option');
+                option.value = `${prefijo} ${i}`;
+                option.textContent = `${prefijo} ${i}`;
+                selectCancha.appendChild(option);
+            }
+        }
+
+        function calcularMontoTurno() {
+            const horas = parseInt(document.getElementById('horas').value) || 1;
+            const tipo = document.getElementById('tipo').value;
+            
+            let precioHora = 12000;
+            if (tipo === 'Sintético F5') {
+                precioHora = parseFloat(ajustesGlobal.precio_sintetico_f5) || 12000;
+            } else if (tipo === 'Futsal') {
+                precioHora = parseFloat(ajustesGlobal.precio_futsal) || 15000;
+            } else if (tipo === 'Pasto F11') {
+                precioHora = parseFloat(ajustesGlobal.precio_pasto_f11) || 20000;
+            }
+
+            const total = horas * precioHora;
+            document.getElementById('lbl-monto-reserva').textContent = `$ ${total.toLocaleString('es-AR')}`;
+        }
+
+        async function cargarReservas() {
+            const res = await fetch('/api/canchas/reservas');
+            if (res.ok) {
+                reservasGlobal = await res.json();
+                renderReservas(reservasGlobal);
+                actualizarHorariosOcupados();
+            }
+        }
+
+        // Muestra los horarios ya ocupados de la cancha/fecha seleccionadas
+        function actualizarHorariosOcupados() {
+            const fecha = document.getElementById('fecha').value;
+            const cancha = document.getElementById('cancha').value;
+            const contenedor = document.getElementById('contenedor-ocupados');
+            const lista = document.getElementById('lista-ocupados');
+            lista.innerHTML = '';
+
+            if (!fecha || !cancha) {
+                contenedor.style.display = 'none';
+                return;
+            }
+
+            const ocupados = reservasGlobal
+                .filter(r => r.cancha === cancha && r.fecha === fecha)
+                .sort((a, b) => (a.horario_inicio || '').localeCompare(b.horario_inicio || ''));
+
+            if (ocupados.length === 0) {
+                contenedor.style.display = 'none';
+                return;
+            }
+
+            contenedor.style.display = 'block';
+            ocupados.forEach(r => {
+                const span = document.createElement('span');
+                span.className = 'badge bg-danger';
+                span.textContent = `${r.horario_inicio} - ${r.horario_fin} (${r.nombre})`;
+                lista.appendChild(span);
+            });
+        }
+
+        // Chequea si el rango elegido se pisa con alguna reserva existente de esa cancha/fecha
+        function hayConflictoHorario(cancha, fecha, inicio, fin) {
+            return reservasGlobal.some(r => r.cancha === cancha && r.fecha === fecha && (
+                (r.horario_inicio <= inicio && r.horario_fin > inicio) ||
+                (r.horario_inicio < fin && r.horario_fin >= fin) ||
+                (r.horario_inicio >= inicio && r.horario_fin <= fin)
+            ));
+        }
+
+        function renderReservas(datos) {
+            const tbody = document.getElementById('tabla-reservas-body');
+            tbody.innerHTML = '';
+            datos.forEach(r => {
+                const badge = r.estado === 'Pagado' ? 'bg-success' : 'bg-warning text-dark';
+                let botones = '';
+
+                if (r.estado === 'Pendiente' && rolUsuario !== 'espectador') {
+                    botones += `<button class="btn btn-sm btn-success me-1" onclick="pagarTurno(${r.id}, ${r.monto}, '${r.cancha} - ${r.nombre}')" title="Cobrar"><i class="bi bi-cash"></i></button>`;
+                }
+
+                if (rolUsuario !== 'espectador') {
+                    botones += `<button class="btn btn-sm btn-outline-success me-1" onclick='enviarConfirmacionWhatsApp(${JSON.stringify(r)})' title="Pedir confirmación por WhatsApp"><i class="bi bi-whatsapp"></i></button>`;
+                    botones += `<button class="btn btn-sm btn-outline-primary me-1" onclick='usarClienteAnterior(${JSON.stringify(r)})' title="Repetir Cliente"><i class="bi bi-arrow-repeat"></i></button>`;
+                }
+
+                if (rolUsuario === 'admin') {
+                    botones += `<button class="btn btn-sm btn-outline-danger" onclick="eliminarTurno(${r.id})" title="Eliminar"><i class="bi bi-trash"></i></button>`;
+                }
+
+                let duracionHoras = 1;
+                if (r.horario_inicio && r.horario_fin) {
+                    const [hIni] = r.horario_inicio.split(':').map(Number);
+                    const [hFin] = r.horario_fin.split(':').map(Number);
+                    if (!isNaN(hIni) && !isNaN(hFin) && hFin > hIni) {
+                        duracionHoras = hFin - hIni;
+                    }
+                }
+
+                tbody.innerHTML += `
+                    <tr>
+                        <td><small>${r.fecha}<br><strong>${r.horario_inicio || ''}</strong> (${duracionHoras}h)</small></td>
+                        <td><strong>${r.nombre}</strong><br><small class="text-muted">${r.telefono}</small></td>
+                        <td><small>${r.cancha}</small></td>
+                        <td><strong>$ ${r.monto.toLocaleString('es-AR')}</strong></td>
+                        <td><span class="badge ${badge}">${r.estado}</span></td>
+                        <td class="text-end">${botones}</td>
+                    </tr>
+                `;
+            });
+        }
+
+        function filtrarTurnos() {
+            const q = document.getElementById('buscador-turnos').value.toLowerCase();
+            const filtrados = reservasGlobal.filter(r => r.nombre.toLowerCase().includes(q) || r.telefono.includes(q));
+            renderReservas(filtrados);
+        }
+
+        // Arma el número en formato internacional (asume Argentina si no viene con código de país)
+        function formatearTelefonoWA(tel) {
+            let limpio = String(tel || '').replace(/\D/g, '');
+            if (!limpio) return '';
+            if (limpio.startsWith('549')) {
+                // ya viene en formato internacional de celular argentino
+            } else if (limpio.startsWith('54')) {
+                limpio = '549' + limpio.slice(2);
+            } else {
+                limpio = '549' + limpio;
+            }
+            return limpio;
+        }
+
+        function enviarConfirmacionWhatsApp(r) {
+            const telWA = formatearTelefonoWA(r.telefono);
+            if (!telWA) {
+                alert('Este turno no tiene un teléfono cargado.');
+                return;
+            }
+            const mensaje = `Hola ${r.nombre}! Te escribimos de ${ajustesGlobal.nombre_club || 'el club'} para confirmar tu turno en ${r.cancha} el día ${r.fecha} a las ${r.horario_inicio} hs. Por favor, respondé este mensaje confirmando el turno. Si no lo confirmás, la reserva podría ser cancelada.`;
+            const url = `https://wa.me/${telWA}?text=${encodeURIComponent(mensaje)}`;
+            window.open(url, '_blank');
+        }
+
+        function usarClienteAnterior(r) {
+            document.getElementById('nombre').value = r.nombre;
+            document.getElementById('dni').value = r.dni;
+            document.getElementById('telefono').value = r.telefono;
+            alert(`Datos de ${r.nombre} cargados en el formulario.`);
+        }
+
+        document.getElementById('form-reserva').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const horas = parseInt(document.getElementById('horas').value) || 1;
+            const tipo = document.getElementById('tipo').value;
+            const horaInicioStr = document.getElementById('horario').value;
+
+            let [hh, mm] = horaInicioStr.split(':').map(Number);
+            let hhFin = hh + horas;
+            if (hhFin > 23) hhFin = 23;
+            const horarioFinStr = `${String(hhFin).padStart(2, '0')}:${String(mm).padStart(2, '0')}`;
+            
+            let precioHora = 12000;
+            if (tipo === 'Sintético F5') {
+                precioHora = parseFloat(ajustesGlobal.precio_sintetico_f5) || 12000;
+            } else if (tipo === 'Futsal') {
+                precioHora = parseFloat(ajustesGlobal.precio_futsal) || 15000;
+            } else if (tipo === 'Pasto F11') {
+                precioHora = parseFloat(ajustesGlobal.precio_pasto_f11) || 20000;
+            }
+            
+            const montoTotal = horas * precioHora;
+
+            const payload = {
+                nombre: document.getElementById('nombre').value,
+                dni: document.getElementById('dni').value,
+                telefono: document.getElementById('telefono').value,
+                fecha: document.getElementById('fecha').value,
+                horario_inicio: horaInicioStr,
+                horario_fin: horarioFinStr,
+                cancha: document.getElementById('cancha').value,
+                tipo: tipo,
+                monto: montoTotal
+            };
+
+            if (hayConflictoHorario(payload.cancha, payload.fecha, payload.horario_inicio, payload.horario_fin)) {
+                alert('Ese horario ya está ocupado en la cancha seleccionada. Elegí otro horario libre (mirá la lista de horarios ocupados debajo del selector de cancha).');
+                return;
+            }
+
+            const res = await fetch('/api/canchas/reservar', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            if (res.ok) {
+                alert('¡Turno reservado con éxito!');
+                document.getElementById('form-reserva').reset();
+                document.getElementById('fecha').value = new Date().toISOString().split('T')[0];
+                actualizarSelectCanchas();
+                calcularMontoTurno();
+                cargarReservas();
+            } else {
+                const err = await res.json();
+                alert(err.error || 'Error al reservar el turno.');
+            }
+        });
+
+        async function pagarTurno(id, monto, desc) {
+            const payload = { id: id, monto: monto, descripcion: `Reserva Cancha: ${desc}` };
+            const res = await fetch('/api/canchas/pagar', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            if (res.ok) {
+                alert('¡Turno cobrado e ingresado a caja con éxito!');
+                
+                if (confirm('¿Desea imprimir el comprobante / ticket de pago?')) {
+                    const ventanaTicket = window.open('', '_blank', 'width=400,height=600');
+                    ventanaTicket.document.write(`
+                        <html>
+                        <head><title>Comprobante de Pago - Club Manager Pro</title></head>
+                        <body style="font-family: Arial, sans-serif; padding: 20px; font-size: 14px;">
+                            <div style="text-align: center;">
+                                ${ajustesGlobal.logo_url ? `<img src="${ajustesGlobal.logo_url}" style="max-height: 50px; margin-bottom: 5px;"><br>` : ''}
+                                <h3 style="margin-bottom: 5px;">${ajustesGlobal.nombre_club || 'Club Manager Pro'}</h3>
+                                <p style="margin: 0; color: #555;">Comprobante de Cobro / Caja</p>
+                                ${ajustesGlobal.telefono_contacto ? `<p style="margin: 0; color: #555; font-size: 12px;">Contacto: ${ajustesGlobal.telefono_contacto}</p>` : ''}
+                            </div>
+                            <hr style="border: dashed 1px #ccc;">
+                            <p><strong>Fecha:</strong> ${new Date().toLocaleDateString()} ${new Date().toLocaleTimeString()}</p>
+                            <p><strong>Concepto:</strong> Reserva de Cancha</p>
+                            <p><strong>Detalle:</strong> ${desc}</p>
+                            <p><strong>Monto Abonado:</strong> <span style="font-size: 18px; color: green;">$ ${monto.toLocaleString('es-AR')}</span></p>
+                            <hr style="border: dashed 1px #ccc;">
+                            <p style="text-align: center; font-size: 12px; color: #777;">¡Gracias por su pago!<br>Original para el cliente</p>
+                        </body>
+                        </html>
+                    `);
+                    ventanaTicket.document.close();
+                    ventanaTicket.print();
+                }
+
+                cargarReservas();
+            } else {
+                const err = await res.json();
+                alert(err.error || 'Error al cobrar el turno.');
+            }
+        }
+
+        async function eliminarTurno(id) {
+            if (!confirm('¿Está seguro de eliminar este turno?')) return;
+            const res = await fetch(`/api/canchas/reservas/${id}`, { method: 'DELETE' });
+            if (res.ok) {
+                cargarReservas();
+            } else {
+                const err = await res.json();
+                alert(err.error || 'No autorizado.');
+            }
+        }
+
+        init();
+    </script>
+</body>
+</html>

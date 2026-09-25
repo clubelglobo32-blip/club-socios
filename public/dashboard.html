@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel Principal - Club Manager Pro</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        body { background-color: #f4f6f9; font-family: 'Segoe UI', sans-serif; }
+        .card-menu { border: none; border-radius: 12px; transition: transform 0.2s; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+        .card-menu:hover { transform: translateY(-5px); }
+        .logo-img { max-height: 38px; object-fit: contain; border-radius: 4px; }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-dark bg-dark px-4 shadow-sm">
+        <a class="navbar-brand fw-bold d-flex align-items-center gap-2" href="#">
+            <img id="nav-logo" src="" alt="Logo" class="logo-img" style="display: none;">
+            <i class="bi bi-shield-lock-fill me-1 text-primary"></i> <span id="lbl-club-title">Club Manager Pro</span>
+        </a>
+        <div class="d-flex align-items-center">
+            <span class="text-light me-3 small" id="lbl-user-info">Usuario: ...</span>
+            <a href="/api/logout" class="btn btn-outline-light btn-sm"><i class="bi bi-box-arrow-right me-1"></i> Salir</a>
+        </div>
+    </nav>
+
+    <div class="container py-5">
+        <div class="text-center mb-5">
+            <h2 class="fw-bold text-dark">Panel de Gestión General</h2>
+            <p class="text-muted">Seleccione el módulo al que desea ingresar</p>
+        </div>
+
+        <div class="row g-4 justify-content-center">
+            <div class="col-md-4">
+                <div class="card card-menu p-4 text-center bg-white h-100">
+                    <div class="card-body">
+                        <i class="bi bi-people fs-1 text-primary mb-3"></i>
+                        <h4 class="fw-bold">Socios</h4>
+                        <p class="text-muted small">Gestión de padrón, alta de socios y cobro de cuotas.</p>
+                        <a href="socios.html" class="btn btn-primary w-100 mt-2">Ingresar</a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <div class="card card-menu p-4 text-center bg-white h-100">
+                    <div class="card-body">
+                        <i class="bi bi-calendar-check fs-1 text-success mb-3"></i>
+                        <h4 class="fw-bold">Canchas</h4>
+                        <p class="text-muted small">Reserva de turnos y control de canchas del club.</p>
+                        <a href="canchas.html" class="btn btn-success w-100 mt-2">Ingresar</a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <div class="card card-menu p-4 text-center bg-white h-100">
+                    <div class="card-body">
+                        <i class="bi bi-cash-stack fs-1 text-warning mb-3"></i>
+                        <h4 class="fw-bold">Caja</h4>
+                        <p class="text-muted small">Control de ingresos, egresos y balances generales.</p>
+                        <a href="caja.html" class="btn btn-warning text-dark w-100 mt-2">Ingresar</a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-4" id="menu-ajustes">
+                <div class="card card-menu p-4 text-center bg-white h-100 border-start border-danger border-4">
+                    <div class="card-body">
+                        <i class="bi bi-sliders fs-1 text-danger mb-3"></i>
+                        <h4 class="fw-bold">Ajustes</h4>
+                        <p class="text-muted small">Configuración de precios, legajos, logo y datos del club.</p>
+                        <a href="ajustes.html" class="btn btn-danger w-100 mt-2">Ingresar</a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-4" id="menu-usuarios">
+                <div class="card card-menu p-4 text-center bg-white h-100 border-start border-secondary border-4">
+                    <div class="card-body">
+                        <i class="bi bi-person-badge fs-1 text-secondary mb-3"></i>
+                        <h4 class="fw-bold">Usuarios del Sistema</h4>
+                        <p class="text-muted small">Administración de operadores y claves de acceso.</p>
+                        <a href="usuarios.html" class="btn btn-secondary w-100 mt-2">Ingresar</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        fetch('/api/session').then(res => res.json()).then(data => {
+            if (!data.loggedIn) {
+                window.location.href = 'index.html';
+            } else {
+                document.getElementById('lbl-user-info').textContent = `${data.nombre} (${data.rol.toUpperCase()})`;
+                
+                // Restricciones para usuario estándar (operador)
+                if (data.rol !== 'admin') {
+                    document.getElementById('menu-ajustes').style.display = 'none';
+                    document.getElementById('menu-usuarios').style.display = 'none';
+                }
+            }
+        });
+
+        fetch('/api/ajustes').then(res => res.json()).then(data => {
+            if (data.nombre_club) document.getElementById('lbl-club-title').textContent = data.nombre_club;
+            if (data.logo_url) {
+                const el = document.getElementById('nav-logo');
+                el.src = data.logo_url;
+                el.style.display = 'inline-block';
+            }
+        });
+    </script>
+</body>
+</html>

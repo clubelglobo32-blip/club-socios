@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cobrar Cuota Social - Sistema Club</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        body { background-color: #f4f6f9; font-family: 'Segoe UI', sans-serif; }
+        .card { border: none; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+        .logo-img { max-height: 38px; object-fit: contain; border-radius: 4px; }
+        .ticket-logo { max-height: 60px; object-fit: contain; margin-bottom: 8px; }
+        .mes-checkbox { display: none; }
+        .mes-label { border: 2px solid #dee2e6; border-radius: 8px; padding: 10px; text-align: center; cursor: pointer; transition: all 0.2s; font-weight: 600; color: #495057; background: #fff; }
+        .mes-checkbox:checked + .mes-label { background-color: #d1e7dd; border-color: #198754; color: #0f5132; }
+        /* Meses ya pagados (bloqueados) */
+        .mes-checkbox:disabled + .mes-label { background-color: #e2e3e5; border-color: #adb5bd; color: #6c757d; cursor: not-allowed; opacity: 0.8; text-decoration: line-through; }
+        /* Estilos específicos para impresión de Ticket */
+        @media print {
+            body * { visibility: hidden; }
+            #ticket-impresion, #ticket-impresion * { visibility: visible; }
+            #ticket-impresion { position: absolute; left: 0; top: 0; width: 100%; padding: 20px; }
+            .no-print { display: none !important; }
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-dark bg-dark px-4 shadow-sm no-print">
+        <div class="d-flex align-items-center gap-2">
+            <img id="nav-logo" src="" alt="Logo" class="logo-img" style="display: none;">
+            <a class="navbar-brand fw-bold m-0" href="socios.html"><i class="bi bi-arrow-left me-2"></i> Volver a Socios</a>
+        </div>
+        <span class="text-light fw-semibold">Caja / Cobranza de Cuotas</span>
+    </nav>
+
+    <div class="container py-4">
+        <div class="row justify-content-center">
+            <div class="col-lg-9">
+                <div class="card p-4 bg-white no-print">
+                    <h4 class="fw-bold mb-4 text-success"><i class="bi bi-cash-coin me-2"></i>Registrar Cobro de Cuota</h4>
+                    
+                    <form id="form-pago-cuota">
+                        <!-- Buscador Ágil de Socio -->
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">1. Buscar Socio (por Nombre, Apellido o DNI)</label>
+                            <input type="text" id="buscador-socio" class="form-control form-control-lg" placeholder="Escriba para filtrar socios..." autocomplete="off">
+                            <select class="form-select mt-2" id="socio_id" size="4" required style="display:none;"></select>
+                            <div id="socio-seleccionado-info" class="form-text text-success fw-bold mt-1" style="display:none;"></div>
+                        </div>
+
+                        <!-- Selector de Meses Inteligente (Desde inscripción / año actual y próximo) -->
+                        <div class="mb-3">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <label class="form-label fw-semibold m-0">2. Seleccionar Mes(es) a Pagar</label>
+                                <small class="text-muted" id="info-rango-meses">Seleccione un socio para ver su estado</small>
+                            </div>
+                            <div class="row g-2" id="contenedor-meses">
+                                <div class="col-12 text-center text-muted py-3 border rounded bg-light">
+                                    <em>Primero busque y seleccione un socio para habilitar los meses.</em>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Monto (Automático según categoría y meses seleccionados) -->
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">3. Monto Total a Cobrar ($)</label>
+                            <input type="number" step="0.01" class="form-control form-control-lg fw-bold text-success" id="monto" required>
+                            <div class="form-text">Calculado automáticamente según la tarifa de la categoría y los meses tildados.</div>
+                        </div>
+
+                        <!-- Subir Comprobante -->
+                        <div class="mb-4">
+                            <label class="form-label fw-semibold">4. Adjuntar Comprobante (Opcional - Foto / PDF)</label>
+                            <input type="file" class="form-control" id="comprobante" name="comprobante" accept="image/*,.pdf">
+                        </div>
+
+                        <button type="submit" class="btn btn-success w-100 fw-semibold py-3 fs-5">
+                            <i class="bi bi-check-circle me-2"></i>Confirmar Cobro, Ingresar a Caja e Imprimir Ticket
+                        </button>
+                    </form>
+                </div>
+
+                <!-- SECCIÓN OCULTA PARA IMPRESIÓN DE TICKET -->
+                <div id="ticket-impresion" style="display: none;" class="card p-4 bg-white border border-dark">
+                    <div class="text-center border-bottom pb-3 mb-3">
+                        <img id="ticket-logo" src="" alt="Logo" class="ticket-logo" style="display:none;">
+                        <h3 class="fw-bold m-0" id="ticket-nombre-club">CLUB ATLÉTICO</h3>
+                        <p class="text-muted m-0 small">Comprobante Oficial de Pago - Cuota Social</p>
+                        <p class="text-muted m-0 small" id="ticket-telefono" style="display:none;"></p>
+                    </div>
+                    <div class="mb-2"><strong>Fecha y Hora:</strong> <span id="t-fecha"></span></div>
+                    <div class="mb-2"><strong>Recibo N°:</strong> <span id="t-recibo"></span></div>
+                    <div class="mb-2"><strong>Socio:</strong> <span id="t-socio"></span> (Legajo: <span id="t-legajo"></span>)</div>
+                    <div class="mb-2"><strong>Categoría:</strong> <span id="t-categoria"></span></div>
+                    <div class="mb-2"><strong>Concepto / Periodo:</strong> <span id="t-detalle"></span></div>
+                    <hr>
+                    <div class="d-flex justify-content-between fs-4 fw-bold mb-4">
+                        <span>TOTAL PAGADO:</span>
+                        <span id="t-monto">$0.00</span>
+                    </div>
+                    <div class="text-center text-muted small mt-4 pt-3 border-top">
+                        <p class="mb-1">¡Gracias por mantener tu cuota al día!</p>
+                        <p class="m-0">Original para el Socio</p>
+                    </div>
+                    <div class="text-center mt-4 no-print">
+                        <button onclick="window.print()" class="btn btn-dark px-4 me-2"><i class="bi bi-printer me-2"></i>Imprimir Ticket</button>
+                        <a href="socios.html" class="btn btn-outline-secondary px-4">Volver a Socios</a>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let listaSocios = [];
+        let tarifasAjustes = {};
+        let socioSeleccionado = null;
+        let mesesPagadosSet = new Set();
+
+        async function inicializar() {
+            // Validar sesión
+            try {
+                const resSesion = await fetch('/api/session');
+                const dataSesion = await resSesion.json();
+                if (!dataSesion.loggedIn) {
+                    window.location.href = 'index.html';
+                    return;
+                }
+                if (dataSesion.rol === 'espectador') {
+                    alert('Tu usuario es Espectador (solo lectura) y no puede registrar cobros.');
+                    window.location.href = 'socios.html';
+                    return;
+                }
+            } catch(e) { console.error(e); }
+
+            // Cargar Ajustes (tarifas, nombre del club, logo y teléfono de contacto)
+            try {
+                const resAj = await fetch('/api/ajustes');
+                if (resAj.ok) {
+                    tarifasAjustes = await resAj.json();
+                    document.getElementById('ticket-nombre-club').innerText = tarifasAjustes.nombre_club || 'CLUB ATLÉTICO';
+
+                    if (tarifasAjustes.logo_url) {
+                        document.getElementById('nav-logo').src = tarifasAjustes.logo_url;
+                        document.getElementById('nav-logo').style.display = 'inline-block';
+
+                        const ticketLogo = document.getElementById('ticket-logo');
+                        ticketLogo.src = tarifasAjustes.logo_url;
+                        ticketLogo.style.display = 'inline-block';
+                    }
+
+                    if (tarifasAjustes.telefono_contacto) {
+                        const elTel = document.getElementById('ticket-telefono');
+                        elTel.innerText = `Contacto: ${tarifasAjustes.telefono_contacto}`;
+                        elTel.style.display = 'block';
+                    }
+                }
+            } catch (e) { console.error("Error cargando ajustes", e); }
+
+            // Cargar Socios
+            try {
+                const resSoc = await fetch('/api/socios');
+                if (resSoc.ok) {
+                    listaSocios = await resSoc.json();
+                }
+            } catch (e) { console.error("Error cargando socios", e); }
+        }
+
+        // Buscador ágil en tiempo real
+        const inputBuscador = document.getElementById('buscador-socio');
+        const selectSocio = document.getElementById('socio_id');
+
+        inputBuscador.addEventListener('input', (e) => {
+            const texto = e.target.value.toLowerCase().trim();
+            if (texto.length === 0) {
+                selectSocio.style.display = 'none';
+                return;
+            }
+
+            const filtrados = listaSocios.filter(s => 
+                (s.nombre && s.nombre.toLowerCase().includes(texto)) || 
+                (s.apellido && s.apellido.toLowerCase().includes(texto)) || 
+                (s.dni && s.dni.includes(texto)) ||
+                (s.legajo && s.legajo.toString().includes(texto))
+            );
+
+            selectSocio.innerHTML = '';
+            if (filtrados.length > 0) {
+                selectSocio.style.display = 'block';
+                filtrados.forEach(s => {
+                    const opt = document.createElement('option');
+                    opt.value = s.id;
+                    opt.textContent = `${s.apellido}, ${s.nombre} - DNI: ${s.dni} (Cat: ${s.categoria || 'General'})`;
+                    opt.dataset.json = JSON.stringify(s);
+                    selectSocio.appendChild(opt);
+                });
+            } else {
+                selectSocio.style.display = 'none';
+            }
+        });
+
+        // Al seleccionar un socio del listado filtrado
+        selectSocio.addEventListener('change', async () => {
+            const opt = selectSocio.options[selectSocio.selectedIndex];
+            if (opt) {
+                socioSeleccionado = JSON.parse(opt.dataset.json);
+                inputBuscador.value = `${socioSeleccionado.apellido}, ${socioSeleccionado.nombre}`;
+                selectSocio.style.display = 'none';
+                
+                const info = document.getElementById('socio-seleccionado-info');
+                info.style.display = 'block';
+                info.innerText = `Socio Seleccionado: Legajo #${socioSeleccionado.legajo || '-'} | Categoría: ${socioSeleccionado.categoria || 'General'}`;
+
+                // Consultar los pagos de este socio para bloquear meses ya abonados
+                await cargarPagosYConstruirMeses(socioSeleccionado.id);
+            }
+        });
+
+        // Cargar pagos del socio y armar el panel interactivo de meses
+        async function cargarPagosYConstruirMeses(socioId) {
+            mesesPagadosSet.clear();
+            try {
+                const res = await fetch(`/api/socios/${socioId}/pagos`);
+                if (res.ok) {
+                    const pagos = await res.json();
+                    if (Array.isArray(pagos)) {
+                        pagos.forEach(p => {
+                            if (p.detalle) {
+                                p.detalle.split(',').forEach(m => mesesPagadosSet.add(m.trim().toLowerCase()));
+                            }
+                        });
+                    }
+                }
+            } catch (err) {
+                console.error("Error al obtener pagos del socio", err);
+            }
+
+            generarGrillaMesesInteligente();
+        }
+
+        // Generar meses desde la fecha de alta del socio hasta diciembre del año próximo (permite pagar adelantado)
+        function generarGrillaMesesInteligente() {
+            if (!socioSeleccionado) return;
+
+            const fechaAltaStr = socioSeleccionado.fecha_alta || socioSeleccionado.creado_en || socioSeleccionado.created_at || '2025-01-01';
+            const fechaInicio = new Date(fechaAltaStr);
+            let anioInicio = isNaN(fechaInicio.getFullYear()) ? 2025 : fechaInicio.getFullYear();
+            let mesInicio = isNaN(fechaInicio.getMonth()) ? 0 : fechaInicio.getMonth();
+
+            const anioActual = new Date().getFullYear();
+            const anioFin = anioActual + 1; // Permite pagar también el año próximo
+
+            const mesesNombres = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
+            const contenedor = document.getElementById('contenedor-meses');
+            contenedor.innerHTML = '';
+
+            document.getElementById('info-rango-meses').innerText = `Mostrando desde ${mesesNombres[mesInicio]} ${anioInicio} en adelante`;
+
+            let contadorMesesRenderizados = 0;
+
+            for (let anio = anioInicio; anio <= anioFin; anio++) {
+                let mStart = (anio === anioInicio) ? mesInicio : 0;
+                let mEnd = 11; // Mostrar todo el año hasta diciembre (incluyendo meses futuros para anticipar pagos)
+
+                // Crear separador de año si hay varios
+                const divAnio = document.createElement('div');
+                divAnio.className = 'col-12 mt-2';
+                divAnio.innerHTML = `<strong class="text-secondary small"><i class="bi bi-calendar-event me-1"></i> Año ${anio}</strong>`;
+                contenedor.appendChild(divAnio);
+
+                const rowMeses = document.createElement('div');
+                rowMeses.className = 'row g-2 mb-2';
+
+                for (let m = mStart; m <= mEnd; m++) {
+                    const nombreMes = mesesNombres[m];
+                    const claveBusqueda = `${nombreMes.toLowerCase()} ${anio}`;
+                    const estaPagado = mesesPagadosSet.has(claveBusqueda);
+
+                    const col = document.createElement('div');
+                    col.className = 'col-4 col-md-3';
+
+                    if (estaPagado) {
+                        // Mes pagado: bloqueado con tachado y estilo gris
+                        col.innerHTML = `
+                            <input type="checkbox" class="mes-checkbox" id="mes_${anio}_${m}" value="${nombreMes} ${anio}" disabled>
+                            <label class="mes-label d-block text-muted" for="mes_${anio}_${m}" title="Este mes ya se encuentra pagado">
+                                <i class="bi bi-check-circle-fill text-success"></i> ${nombreMes}
+                            </label>
+                        `;
+                    } else {
+                        // Mes pendiente o futuro: habilitado para tildar
+                        col.innerHTML = `
+                            <input type="checkbox" class="mes-checkbox" id="mes_${anio}_${m}" value="${nombreMes} ${anio}" onchange="calcularMontoTotal()">
+                            <label class="mes-label d-block" for="mes_${anio}_${m}">${nombreMes}</label>
+                        `;
+                    }
+                    rowMeses.appendChild(col);
+                    contadorMesesRenderizados++;
+                }
+                contenedor.appendChild(rowMeses);
+            }
+
+            calcularMontoTotal();
+        }
+
+        // Calcular monto según tarifa en ajustes y cantidad de meses tildados
+        function calcularMontoTotal() {
+            if (!socioSeleccionado) return;
+
+            let valorUnitario = tarifasAjustes.cuota_pleno || 8000;
+            const cat = (socioSeleccionado.categoria || '').toLowerCase();
+
+            if (cat.includes('jugador')) {
+                valorUnitario = tarifasAjustes.cuota_jugador || 6000;
+            } else if (cat.includes('transitorio')) {
+                valorUnitario = tarifasAjustes.cuota_transitorio || 5000;
+            } else if (cat.includes('pleno')) {
+                valorUnitario = tarifasAjustes.cuota_pleno || 8000;
+            }
+
+            const checkboxes = document.querySelectorAll('.mes-checkbox:checked');
+            const cantMeses = checkboxes.length > 0 ? checkboxes.length : 0;
+
+            document.getElementById('monto').value = valorUnitario * cantMeses;
+        }
+
+        // Enviar formulario de cobro
+        document.getElementById('form-pago-cuota').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            if (!socioSeleccionado) {
+                alert('Por favor, busque y seleccione un socio.');
+                return;
+            }
+
+            const checkboxes = document.querySelectorAll('.mes-checkbox:checked');
+            if (checkboxes.length === 0) {
+                alert('Por favor, seleccione al menos un mes a pagar.');
+                return;
+            }
+
+            let mesesSeleccionados = [];
+            checkboxes.forEach(cb => mesesSeleccionados.push(cb.value));
+            const detalleMeses = mesesSeleccionados.join(', ');
+
+            const formData = new FormData();
+            formData.append('socio_id', socioSeleccionado.id);
+            formData.append('socio_nombre', `${socioSeleccionado.apellido}, ${socioSeleccionado.nombre}`);
+            formData.append('concepto', 'Cuota Social');
+            formData.append('detalle', detalleMeses);
+            formData.append('monto', document.getElementById('monto').value);
+            
+            const archivoInput = document.getElementById('comprobante');
+            if (archivoInput.files[0]) {
+                formData.append('comprobante', archivoInput.files[0]);
+            }
+
+            try {
+                const res = await fetch('/api/socios/pagar', {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await res.json();
+
+                if (data.success) {
+                    // Mostrar Ticket para Imprimir
+                    document.getElementById('t-fecha').innerText = `${data.fecha || new Date().toLocaleDateString()} ${data.hora || ''}`;
+                    document.getElementById('t-recibo').innerText = `#000${Math.floor(Math.random() * 90000) + 10000}`;
+                    document.getElementById('t-socio').innerText = `${socioSeleccionado.apellido}, ${socioSeleccionado.nombre}`;
+                    document.getElementById('t-legajo').innerText = socioSeleccionado.legajo || '-';
+                    document.getElementById('t-categoria').innerText = socioSeleccionado.categoria || 'General';
+                    document.getElementById('t-detalle').innerText = data.detalle || detalleMeses;
+                    document.getElementById('t-monto').innerText = `$${parseFloat(data.monto).toLocaleString('es-AR')}`;
+
+                    // Ocultar formulario y mostrar ticket imprimible
+                    document.querySelector('.card.no-print').style.display = 'none';
+                    document.getElementById('ticket-impresion').style.display = 'block';
+                } else {
+                    alert('Error al procesar el cobro: ' + (data.error || 'Desconocido'));
+                }
+            } catch (err) {
+                console.error("Error de red", err);
+                alert('Error de conexión al registrar el cobro.');
+            }
+        });
+
+        inicializar();
+    </script>
+</body>
+</html>

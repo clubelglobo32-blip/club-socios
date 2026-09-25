@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Módulo de Caja - Club Manager Pro</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        body { background-color: #f4f6f9; font-family: 'Segoe UI', sans-serif; } 
+        .card { border: none; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+        .logo-img { max-height: 38px; object-fit: contain; border-radius: 4px; }
+        @media print {
+            body * { visibility: hidden; }
+            #zona-impresion-reporte, #zona-impresion-reporte * { visibility: visible; }
+            #zona-impresion-reporte { position: absolute; left: 0; top: 0; width: 100%; }
+            .no-print { display: none !important; }
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-dark bg-dark px-4 shadow-sm no-print">
+        <div class="d-flex align-items-center gap-2">
+            <img id="nav-logo" src="" alt="Logo" class="logo-img" style="display: none;">
+            <a class="navbar-brand fw-bold m-0" href="dashboard.html"><i class="bi bi-arrow-left me-2"></i> Menú Principal</a>
+        </div>
+        <span class="text-light fw-semibold">Control de Caja y Balance</span>
+    </nav>
+
+    <div class="container py-4">
+        <!-- Panel de Balances y Filtros (visible para admin y espectador; oculto para operador) -->
+        <div class="card p-4 bg-white mb-4 no-print" id="panel-admin-caja" style="display: none;">
+            <h4 class="fw-bold mb-3 text-dark"><i class="bi bi-graph-up me-2"></i>Reportes y Balances</h4>
+            <div class="row g-3 align-items-end">
+                <div class="col-md-3">
+                    <label class="form-label fw-semibold small">Filtrar por Mes</label>
+                    <select class="form-select" id="filtro-mes" onchange="aplicarFiltrosReporte()">
+                        <option value="">Todos los Meses</option>
+                        <option value="01">Enero</option><option value="02">Febrero</option><option value="03">Marzo</option>
+                        <option value="04">Abril</option><option value="05">Mayo</option><option value="06">Junio</option>
+                        <option value="07">Julio</option><option value="08">Agosto</option><option value="09">Septiembre</option>
+                        <option value="10">Octubre</option><option value="11">Noviembre</option><option value="12">Diciembre</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label fw-semibold small">Filtrar por Año</label>
+                    <input type="number" class="form-control" id="filtro-anio" placeholder="Ej. 2026" oninput="aplicarFiltrosReporte()">
+                </div>
+                <div class="col-md-6 text-end">
+                    <button class="btn btn-outline-dark" onclick="window.print()"><i class="bi bi-printer me-1"></i> Imprimir Reporte Detallado</button>
+                    <button class="btn btn-primary no-print" id="btn-nuevo-movimiento" data-bs-toggle="modal" data-bs-target="#modalMovimiento"><i class="bi bi-plus-circle me-1"></i> Registrar Egreso/Ingreso Manual</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Zona Imprimible de Reportes -->
+        <div class="card p-4 bg-white" id="zona-impresion-reporte">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <div>
+                    <h3 class="fw-bold text-dark m-0" id="reporte-titulo-club">Club Manager Pro</h3>
+                    <p class="text-muted small m-0">Reporte Detallado de Caja — Fecha de Emisión: <span id="fecha-emision-actual"></span></p>
+                </div>
+                <div class="text-end">
+                    <span class="badge bg-secondary fs-6" id="badge-periodo-lbl">Movimientos Generales</span>
+                </div>
+            </div>
+            
+            <div class="row g-3 mb-4">
+                <div class="col-md-4">
+                    <div class="p-3 bg-light rounded border">
+                        <small class="text-muted d-block">Total Ingresos</small>
+                        <span class="fs-4 fw-bold text-success" id="lbl-total-ingresos">$0</span>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="p-3 bg-light rounded border">
+                        <small class="text-muted d-block">Total Egresos</small>
+                        <span class="fs-4 fw-bold text-danger" id="lbl-total-egresos">$0</span>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="p-3 bg-light rounded border">
+                        <small class="text-muted d-block">Balance Neto</small>
+                        <span class="fs-4 fw-bold text-primary" id="lbl-balance-neto">$0</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="alert alert-warning py-2 small d-none" id="alerta-deficit">
+                <i class="bi bi-exclamation-triangle-fill me-1"></i> <strong>Atención:</strong> El club está gastando más de lo que ingresó en este período (Déficit operativo).
+            </div>
+
+            <h5 class="fw-bold text-secondary mb-3">Detalle de Movimientos</h5>
+            <div class="table-responsive">
+                <table class="table table-striped align-middle">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>Fecha / Hora</th>
+                            <th>Tipo</th>
+                            <th>Descripción</th>
+                            <th class="text-end">Monto</th>
+                            <th class="text-center no-print" id="th-acciones" style="display: none;">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tabla-caja-body"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Movimiento Manual -->
+    <div class="modal fade" id="modalMovimiento" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content p-4">
+                <div class="modal-header border-0">
+                    <h4 class="fw-bold">Registrar Movimiento en Caja</h4>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="form-movimiento">
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold small">Tipo de Movimiento</label>
+                            <select class="form-select" id="mov-tipo" required>
+                                <option value="Ingreso">Ingreso Extra</option>
+                                <option value="Egreso">Egreso / Gasto</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold small">Descripción</label>
+                            <input type="text" class="form-control" id="mov-desc" placeholder="Ej. Compra de materiales, reparación..." required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold small">Monto ($)</label>
+                            <input type="number" class="form-control" id="mov-monto" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100 fw-semibold">Guardar Movimiento</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        let cajaGlobal = [];
+        let rolUsuario = 'operador';
+
+        fetch('/api/session').then(res => res.json()).then(data => { 
+            if (!data.loggedIn) window.location.href = 'index.html';
+            rolUsuario = data.rol;
+            if (rolUsuario === 'admin' || rolUsuario === 'espectador') {
+                document.getElementById('panel-admin-caja').style.display = 'block';
+            }
+            if (rolUsuario === 'admin') {
+                document.getElementById('th-acciones').style.display = 'table-cell';
+            }
+            if (rolUsuario === 'espectador') {
+                // El espectador ve todos los balances, pero no puede cargar movimientos manuales
+                document.getElementById('btn-nuevo-movimiento').style.display = 'none';
+            }
+            cargarCaja();
+        });
+
+        fetch('/api/ajustes').then(res => res.json()).then(data => {
+            if (data.nombre_club) document.getElementById('reporte-titulo-club').textContent = data.nombre_club;
+            if (data.logo_url) {
+                const el = document.getElementById('nav-logo');
+                el.src = data.logo_url;
+                el.style.display = 'inline-block';
+            }
+        });
+
+        document.getElementById('fecha-emision-actual').textContent = new Date().toLocaleDateString('es-AR');
+
+        async function cargarCaja() {
+            const res = await fetch('/api/caja');
+            if (res.ok) {
+                cajaGlobal = await res.json();
+                
+                // Si es operador (no admin ni espectador), filtrar estrictamente solo los movimientos de hoy
+                if (rolUsuario !== 'admin' && rolUsuario !== 'espectador') {
+                    const hoyStr = new Date().toISOString().split('T')[0];
+                    cajaGlobal = cajaGlobal.filter(m => m.fecha === hoyStr);
+                    document.getElementById('badge-periodo-lbl').textContent = 'Movimientos del Día (Operador)';
+                }
+
+                renderCaja(cajaGlobal);
+            }
+        }
+
+        function renderCaja(datos) {
+            const tbody = document.getElementById('tabla-caja-body');
+            tbody.innerHTML = '';
+            
+            let totalIngresos = 0;
+            let totalEgresos = 0;
+
+            datos.forEach(m => {
+                const esIngreso = m.tipo === 'Ingreso';
+                if (esIngreso) totalIngresos += m.monto;
+                else totalEgresos += m.monto;
+
+                const badge = esIngreso ? 'bg-success' : 'bg-danger';
+                
+                let tdAccionesHTML = '';
+                if (rolUsuario === 'admin') {
+                    tdAccionesHTML = `<td class="text-center no-print">
+                        <button class="btn btn-sm btn-outline-danger" onclick="eliminarMovimientoCaja(${m.id})" title="Eliminar movimiento erróneo">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </td>`;
+                }
+
+                tbody.innerHTML += `
+                    <tr>
+                        <td><small>${m.fecha || '-'}<br>${m.hora || ''}</small></td>
+                        <td><span class="badge ${badge}">${m.tipo}</span></td>
+                        <td>${m.descripcion}</td>
+                        <td class="text-end fw-bold ${esIngreso ? 'text-success' : 'text-danger'}">$ ${m.monto.toLocaleString('es-AR')}</td>
+                        ${tdAccionesHTML}
+                    </tr>
+                `;
+            });
+
+            const balanceNeto = totalIngresos - totalEgresos;
+            document.getElementById('lbl-total-ingresos').textContent = `$ ${totalIngresos.toLocaleString('es-AR')}`;
+            document.getElementById('lbl-total-egresos').textContent = `$ ${totalEgresos.toLocaleString('es-AR')}`;
+            document.getElementById('lbl-balance-neto').textContent = `$ ${balanceNeto.toLocaleString('es-AR')}`;
+
+            const alerta = document.getElementById('alerta-deficit');
+            if (balanceNeto < 0) alerta.classList.remove('d-none');
+            else alerta.classList.add('d-none');
+        }
+
+        async function eliminarMovimientoCaja(id) {
+            if (!confirm('¿Estás seguro de eliminar este movimiento de caja? Esta acción corregirá el balance general.')) return;
+
+            const res = await fetch(`/api/caja/${id}`, { method: 'DELETE' });
+            if (res.ok) {
+                alert('Movimiento eliminado correctamente.');
+                cargarCaja();
+            } else {
+                const errData = await res.json();
+                alert(errData.error || 'No se pudo eliminar el movimiento.');
+            }
+        }
+
+        function aplicarFiltrosReporte() {
+            const mes = document.getElementById('filtro-mes').value;
+            const anio = document.getElementById('filtro-anio').value;
+
+            let filtrados = cajaGlobal;
+            if (mes) {
+                filtrados = filtrados.filter(m => m.fecha && m.fecha.split('-')[1] === mes);
+            }
+            if (anio) {
+                filtrados = filtrados.filter(m => m.fecha && m.fecha.split('-')[0] === anio);
+            }
+
+            document.getElementById('badge-periodo-lbl').textContent = `Filtro: Mes ${mes || 'Todos'} / Año ${anio || 'Todos'}`;
+            renderCaja(filtrados);
+        }
+
+        document.getElementById('form-movimiento').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const payload = {
+                tipo: document.getElementById('mov-tipo').value,
+                descripcion: document.getElementById('mov-desc').value,
+                monto: parseFloat(document.getElementById('mov-monto').value)
+            };
+
+            const res = await fetch('/api/caja/movimiento', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            if (res.ok) {
+                alert('Movimiento registrado con éxito.');
+                document.getElementById('form-movimiento').reset();
+                bootstrap.Modal.getInstance(document.getElementById('modalMovimiento')).hide();
+                cargarCaja();
+            }
+        });
+    </script>
+</body>
+</html>
